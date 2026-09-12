@@ -209,6 +209,12 @@ tempCodeRunnerFile.py
 # PyPI configuration file
 .pypirc
 
+# Secrets and credentials
+*.key
+*.pem
+secrets/
+credentials/
+
 # Marimo
 marimo/_static/
 marimo/_lsp/
