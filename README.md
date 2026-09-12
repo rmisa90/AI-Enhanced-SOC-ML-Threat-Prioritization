@@ -91,8 +91,6 @@ AI-Enhanced-SOC-ML-Threat-Prioritization/
 
 ## Machine Learning Pipeline
 
-![ML Pipeline](diagrams/ml_pipeline_diagram.png)
-
 - **Model:** Random Forest Classifier
 - **Input:** 21 contextual security features
 - **Training:** Grouped stratified train/test workflow with GridSearchCV
@@ -104,79 +102,7 @@ The model considers contextual information such as Wazuh severity, alert repetit
 
 ---
 
-## Key Features
-
-- ML-based High / Low alert prioritization
-- 21-feature contextual alert representation
-- Random Forest probability scoring
-- MITRE ATT&CK tactic and technique mapping
-- High-priority campaign correlation
-- Controlled automated IP blocking
-- Slack notification for selected important alerts
-- Custom SOC dashboard for prioritized alert visualization
-
----
-
-## Model Evaluation
-
-The trained Random Forest model was evaluated using an independent test set.
-
-Evaluation included:
-
-- Confusion Matrix
-- ROC-AUC
-- Precision-Recall AUC
-- Feature Importance
-- Precision
-- Recall
-- F1-score
-- Accuracy
-
-![Confusion Matrix](outputs/confusion_matrix.png)
-
-Additional evaluation outputs are available in the `outputs/` directory.
-
----
-
-## Testing and System Evaluation
-
-A mixed attack scenario was used to evaluate the live SOC workflow under both benign and suspicious activity.
-
-During one controlled test execution:
-
-- The standard Wazuh dashboard recorded **166 raw alerts**.
-- The ML-prioritized dashboard displayed **94 selected and prioritized alerts** after the implemented processing and filtering workflow.
-
-The purpose of this comparison is to demonstrate how the enhanced workflow reduces the number of alerts presented for analyst review while retaining alerts that are more relevant to investigation.
-
-### Standard Wazuh Alert View
-
-![Standard Wazuh Alerts](testing_evaluation/wazuh_raw_alerts.png)
-
-### ML-Prioritized Alert View
-
-![ML Prioritized Alerts](testing_evaluation/ml_prioritized_alerts.png)
-
-These values represent the result of one controlled mixed-activity test scenario.
-
-The exact number of generated and prioritized alerts may vary between test runs depending on factors such as:
-
-- the attacks performed
-- the number of repeated events
-- benign activity occurring during the test
-- alert timing
-- rule firing frequency
-- generated system events
-
-Therefore, the **166-to-94 comparison should be interpreted as a representative test result rather than a fixed system output**.
-
-More details and screenshots are available in the `testing_evaluation/` directory.
-
----
-
 ## Dashboard
-
-![ML Dashboard](figures/ml_dashboard.png)
 
 The custom dashboard provides visibility into:
 
@@ -208,44 +134,84 @@ Implementation:
 
 ## Automated Response
 
-The project includes controlled IP blocking using `iptables`.
+### Temporary IP Blocking
 
-Automated response is intentionally restricted to selected attack conditions rather than being triggered for every High-priority prediction.
+The project includes controlled temporary IP blocking using `iptables` for selected high-risk attack scenarios.
 
-The response logic includes:
-
-- source IP validation
-- selected rule checks
-- repeated-event thresholds
-- blocking
-- automatic unblocking
-- response logging
+The response logic validates the source IP, checks predefined attack conditions, applies temporary blocking where appropriate, and supports automatic unblocking after the configured response period.
 
 Implementation:
 
 `response/block_ip.sh`
 
----
+### Slack Notification
 
-## Slack Notification
+Selected important security alerts can generate Slack notifications to support faster analyst awareness and investigation.
 
-Selected important alerts can generate Slack notifications containing information such as:
-
-- attack type
-- final priority
-- model confidence
-- source IP
-- agent
-- original rule
-- MITRE tactic
-- MITRE technique
-- response context
+Notifications may include information such as attack type, final priority, model confidence, source IP, affected agent, MITRE ATT&CK context, and response information.
 
 The Slack webhook credential is intentionally excluded from the repository.
 
 Implementation:
 
 `response/slack_notification.py`
+
+---
+
+## How to Run
+
+### Prerequisites
+
+Install the required Python dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+The implementation also requires a configured Wazuh environment with the relevant monitoring and integration components enabled.
+
+### Model Training and Evaluation
+
+Open and run:
+
+```text
+notebooks/model_training_and_evaluation.ipynb
+```
+
+This notebook contains the model training, tuning, threshold selection, and evaluation workflow.
+
+### ML Alert Prioritization
+
+The deployed ML integration is designed to run within the Wazuh integration environment.
+
+Core implementation:
+
+```text
+soc_ml/custom_ml_priority.py
+```
+
+The script loads the trained model artifacts from the configured model directory and processes eligible Wazuh alert files passed by the Wazuh integration.
+
+### Campaign Correlation
+
+Campaign correlation is handled by:
+
+```text
+soc_ml/campaign_correlation.py
+```
+
+It processes selected High-priority ML alerts and groups related activity occurring within the configured correlation window.
+
+### Automated Response
+
+Controlled IP blocking and Slack notification are implemented through:
+
+```text
+response/block_ip.sh
+response/slack_notification.py
+```
+
+These components require the relevant Wazuh response/integration configuration before use.
 
 ---
 
@@ -265,23 +231,6 @@ Implementation:
 | Notification | Slack |
 | Automated Response | iptables |
 | Model Development | Jupyter Notebook |
-
----
-
-## Security Notes
-
-This repository contains a sanitized portfolio version of the project.
-
-The following information is intentionally excluded:
-
-- API keys
-- Slack webhook credentials
-- passwords
-- private keys
-- protected infrastructure IP addresses
-- sensitive environment-specific configuration
-
-The original project dataset is also not publicly distributed. Dataset information is documented in the `dataset/` directory.
 
 ---
 
