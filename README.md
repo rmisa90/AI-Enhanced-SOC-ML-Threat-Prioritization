@@ -1,198 +1,306 @@
 # AI-Enhanced SOC with ML-Based Threat Prioritization
 
-An AI-enhanced Security Operations Center designed to improve security alert prioritization in an SME environment using machine learning, contextual security features, threat intelligence, campaign correlation, and controlled automated response.
+**An AI-enhanced Security Operations Center for machine learning-based security alert prioritization, contextual analysis, and controlled response.**
+
+Final Year Project
 
 ---
 
-## Overview
+## Project Overview
 
-Traditional SIEM platforms can generate large volumes of security alerts, making it difficult for analysts to determine which events require immediate attention.
+This project designs and implements an AI-enhanced Security Operations Center for an SME environment using Wazuh and machine learning.
 
-This project extends a Wazuh-based SOC with a machine learning prioritization layer that evaluates security alerts and classifies eligible events as **High** or **Low priority**.
+The system collects and monitors security alerts from multiple sources, extracts contextual security features, and uses a trained Random Forest classifier to prioritize eligible alerts as **High** or **Low priority**.
 
-The system combines:
-
-- Wazuh security monitoring
-- Suricata network intrusion detection
-- Auditd host-level monitoring
-- VirusTotal threat intelligence
-- Random Forest-based alert prioritization
-- MITRE ATT&CK contextual mapping
-- Campaign correlation
-- Controlled IP blocking
-- Slack security notifications
-- OpenSearch/Wazuh dashboard visualization
-
-The machine learning layer does not replace Wazuh detection. Instead, it acts as an additional intelligence layer that helps analysts prioritize detected alerts using multiple contextual indicators.
-
----
-
-## Problem Statement
-
-SMEs may rely on security tools that generate large numbers of alerts without providing sufficient contextual prioritization.
-
-This can create several operational challenges:
-
-- Important alerts may be hidden among lower-value events.
-- Analysts may spend unnecessary time reviewing repetitive alerts.
-- Static severity levels may not reflect the full security context of an event.
-- Security data from different monitoring sources may not be prioritized consistently.
-- Delayed identification of important alerts can slow investigation and response.
-
-The project addresses this problem by introducing a machine learning layer that evaluates multiple alert characteristics before assigning operational priority.
-
----
-
-## Proposed Solution
-
-The proposed system integrates machine learning with an open-source SOC architecture.
-
-Security events are collected through Wazuh and supporting monitoring tools. Relevant alert information is transformed into a structured **21-feature input vector** and processed by a trained Random Forest classifier.
-
-The model produces a probability score for each eligible alert.
-
-A selected operational threshold is then used to classify the alert as:
-
-- **HIGH** — requires greater analyst attention
-- **LOW** — lower operational priority
-
-Additional components enrich the resulting alerts with MITRE ATT&CK context, campaign information, notification data, and controlled response actions.
-
----
-
-## Key Contributions
-
-- Developed a centralized SOC workflow using open-source security technologies.
-- Designed a **21-feature contextual alert representation** for machine learning.
-- Trained and tuned a Random Forest classifier for High/Low alert prioritization.
-- Integrated the trained model directly into the Wazuh alert-processing workflow.
-- Added model confidence information to support analyst interpretation.
-- Added MITRE ATT&CK tactic and technique context to prioritized alerts.
-- Implemented time-based correlation of related High-priority events.
-- Implemented controlled automated IP blocking for selected attack scenarios.
-- Integrated Slack notification for selected important security events.
-- Created a custom dashboard for viewing prioritized security alerts.
+Additional components provide MITRE ATT&CK context, campaign correlation, Slack notifications, dashboard visualization, and controlled IP-based response.
 
 ---
 
 ## System Architecture
 
-The SOC architecture combines monitoring, analytics, visualization, threat intelligence, and response components.
-
 ![Physical Architecture](diagrams/physical_architecture.png)
 
-The major components include:
+The system combines:
 
-- **Wazuh Manager** — centralized security monitoring and alert management
-- **Wazuh Agents** — endpoint and server monitoring
-- **Suricata** — network-based intrusion detection
-- **Auditd** — host-level auditing
-- **Nginx / Backend Services** — monitored application environment
-- **VirusTotal** — threat intelligence enrichment
-- **Cowrie** — SSH/Telnet honeypot used for controlled attacker interaction and experimentation
-- **Random Forest Model** — ML-based alert prioritization
-- **OpenSearch / Wazuh Dashboard** — storage, searching, and visualization
-- **Slack** — alert notification
-- **iptables** — controlled IP-based response
+- **Wazuh** for centralized security monitoring
+- **Suricata** for network intrusion detection
+- **Auditd** for host-level monitoring
+- **VirusTotal** for threat intelligence enrichment
+- **Cowrie** as an SSH/Telnet honeypot
+- **Random Forest** for ML-based alert prioritization
+- **OpenSearch / Wazuh Dashboards** for visualization
+- **Slack** for selected security notifications
+- **iptables** for controlled automated response
 
 ---
 
-## How the System Works
+## Repository Structure
 
-The overall workflow is:
-
-1. Security activity occurs within the monitored environment.
-2. Wazuh and supporting sensors detect and generate alerts.
-3. Eligible alerts are passed to the custom ML integration.
-4. The integration extracts the same 21 features used during model training.
-5. The Random Forest model calculates the probability of the alert belonging to the High-priority class.
-6. The selected classification threshold converts the probability into a High or Low priority.
-7. MITRE ATT&CK context is added where an appropriate mapping exists.
-8. High-priority events can be passed to the campaign-correlation component.
-9. Selected events can generate Slack notifications.
-10. Predefined high-risk scenarios may trigger controlled IP blocking.
-11. The enriched alerts are displayed through the SOC dashboard for analyst investigation.
+```text
+AI-Enhanced-SOC-ML-Threat-Prioritization/
+│
+├── soc_ml/
+│   ├── custom_ml_priority.py
+│   └── campaign_correlation.py
+│
+├── models/
+│   ├── alert_priority_model_tuned.pkl
+│   ├── feature_columns.pkl
+│   └── model_threshold.pkl
+│
+├── notebooks/
+│   └── model_training_and_evaluation.ipynb
+│
+├── dataset/
+│   └── README.md
+│
+├── honeypot/
+│   └── cowrie_notes.md
+│
+├── response/
+│   ├── block_ip.sh
+│   └── slack_notification.py
+│
+├── diagrams/
+│   ├── physical_architecture.png
+│   ├── logical_architecture.png
+│   └── ml_pipeline_diagram.png
+│
+├── outputs/
+│   ├── confusion_matrix.png
+│   ├── roc_auc.png
+│   ├── pr_auc.png
+│   └── feature_importance.png
+│
+├── testing_evaluation/
+│   ├── README.md
+│   ├── wazuh_raw_alerts.png
+│   └── ml_prioritized_alerts.png
+│
+├── figures/
+│   ├── wazuh_dashboard.png
+│   ├── ml_dashboard.png
+│   ├── alert_prioritization.png
+│   └── slack_notification.png
+│
+├── requirements.txt
+└── README.md
+```
 
 ---
 
 ## Machine Learning Pipeline
 
-![Machine Learning Pipeline](diagrams/ml_pipeline_diagram.png)
+![ML Pipeline](diagrams/ml_pipeline_diagram.png)
 
-The machine learning workflow includes:
+- **Model:** Random Forest Classifier
+- **Input:** 21 contextual security features
+- **Training:** Grouped stratified train/test workflow with GridSearchCV
+- **Output:** High / Low alert priority
+- **Threshold:** Probability-based operational threshold
+- **Additional Context:** Model confidence and MITRE ATT&CK mapping
 
-1. Security-event dataset construction
-2. Data cleaning and preprocessing
-3. Feature extraction
-4. High/Low target preparation
-5. Grouped stratified train-test separation
-6. Random Forest model training
-7. GridSearchCV hyperparameter tuning
-8. Out-of-fold threshold comparison
-9. Final independent test evaluation
-10. Feature importance analysis
-11. Model artifact serialization
-12. Deployment into the Wazuh environment
-
-The training notebook is available here:
-
-[`notebooks/model_training_and_evaluation.ipynb`](notebooks/model_training_and_evaluation.ipynb)
+The model considers contextual information such as Wazuh severity, alert repetition, authentication activity, payload patterns, Suricata detections, VirusTotal enrichment, file-integrity context, service type, and other security indicators.
 
 ---
 
-## 21 Input Features
+## Key Features
 
-The deployed model uses 21 structured security features:
-
-1. `wazuh_rule_level`
-2. `rule_firedtimes`
-3. `suricata_alert_flag`
-4. `suricata_severity`
-5. `vt_positives_ratio`
-6. `fim_change_flag`
-7. `interaction_level`
-8. `is_suspicious_activity`
-9. `has_payload_pattern`
-10. `user_agent_suspicious_flag`
-11. `post_access_activity_flag`
-12. `multiple_auth_failures_flag`
-13. `is_recon_activity`
-14. `audit_alert_flag`
-15. `http_status`
-16. `is_external_ip`
-17. `multi_sensor_flag`
-18. `service_type_database`
-19. `service_type_honeypot`
-20. `service_type_host`
-21. `service_type_web`
-
-These features allow the model to consider more than a single SIEM severity value by incorporating behavioral, network, authentication, threat-intelligence, payload, service, and multi-source context.
+- ML-based High / Low alert prioritization
+- 21-feature contextual alert representation
+- Random Forest probability scoring
+- MITRE ATT&CK tactic and technique mapping
+- High-priority campaign correlation
+- Controlled automated IP blocking
+- Slack notification for selected important alerts
+- Custom SOC dashboard for prioritized alert visualization
 
 ---
 
-## Random Forest Model
+## Model Evaluation
 
-A **Random Forest classifier** was selected for alert prioritization.
+The trained Random Forest model was evaluated using an independent test set.
 
-Hyperparameter tuning was performed using `GridSearchCV` with grouped stratified cross-validation rather than manually selecting model parameters.
+Evaluation included:
 
-The final model configuration included:
+- Confusion Matrix
+- ROC-AUC
+- Precision-Recall AUC
+- Feature Importance
+- Precision
+- Recall
+- F1-score
+- Accuracy
 
-| Parameter | Value |
+![Confusion Matrix](outputs/confusion_matrix.png)
+
+Additional evaluation outputs are available in the `outputs/` directory.
+
+---
+
+## Testing and System Evaluation
+
+A mixed attack scenario was used to evaluate the live SOC workflow under both benign and suspicious activity.
+
+During one controlled test execution:
+
+- The standard Wazuh dashboard recorded **166 raw alerts**.
+- The ML-prioritized dashboard displayed **94 selected and prioritized alerts** after the implemented processing and filtering workflow.
+
+The purpose of this comparison is to demonstrate how the enhanced workflow reduces the number of alerts presented for analyst review while retaining alerts that are more relevant to investigation.
+
+### Standard Wazuh Alert View
+
+![Standard Wazuh Alerts](testing_evaluation/wazuh_raw_alerts.png)
+
+### ML-Prioritized Alert View
+
+![ML Prioritized Alerts](testing_evaluation/ml_prioritized_alerts.png)
+
+These values represent the result of one controlled mixed-activity test scenario.
+
+The exact number of generated and prioritized alerts may vary between test runs depending on factors such as:
+
+- the attacks performed
+- the number of repeated events
+- benign activity occurring during the test
+- alert timing
+- rule firing frequency
+- generated system events
+
+Therefore, the **166-to-94 comparison should be interpreted as a representative test result rather than a fixed system output**.
+
+More details and screenshots are available in the `testing_evaluation/` directory.
+
+---
+
+## Dashboard
+
+![ML Dashboard](figures/ml_dashboard.png)
+
+The custom dashboard provides visibility into:
+
+- High and Low priority alerts
+- Model confidence
+- Source IP information
+- MITRE ATT&CK context
+- Alert details
+- Response information
+
+---
+
+## Campaign Correlation
+
+A separate correlation component groups related High-priority alerts from the same source within a defined time window.
+
+This provides additional analyst context for patterns such as:
+
+- repeated High-priority alerts
+- web attack chains
+- brute-force activity
+- multi-stage attack behavior
+
+Implementation:
+
+`soc_ml/campaign_correlation.py`
+
+---
+
+## Automated Response
+
+The project includes controlled IP blocking using `iptables`.
+
+Automated response is intentionally restricted to selected attack conditions rather than being triggered for every High-priority prediction.
+
+The response logic includes:
+
+- source IP validation
+- selected rule checks
+- repeated-event thresholds
+- blocking
+- automatic unblocking
+- response logging
+
+Implementation:
+
+`response/block_ip.sh`
+
+---
+
+## Slack Notification
+
+Selected important alerts can generate Slack notifications containing information such as:
+
+- attack type
+- final priority
+- model confidence
+- source IP
+- agent
+- original rule
+- MITRE tactic
+- MITRE technique
+- response context
+
+The Slack webhook credential is intentionally excluded from the repository.
+
+Implementation:
+
+`response/slack_notification.py`
+
+---
+
+## Tools & Technologies
+
+| Category | Technology |
 |---|---|
-| Number of estimators | 150 |
-| Maximum depth | 15 |
-| Minimum samples per leaf | 2 |
-| Minimum samples split | 4 |
-| Maximum features | `sqrt` |
-| Class weighting | `balanced` |
+| SIEM | Wazuh |
+| Machine Learning | Python, Scikit-learn, Random Forest |
+| Data Processing | Pandas |
+| Model Serialization | Joblib |
+| Network IDS | Suricata |
+| Host Monitoring | Auditd |
+| Threat Intelligence | VirusTotal |
+| Honeypot | Cowrie |
+| Search / Visualization | OpenSearch / Wazuh Dashboards |
+| Notification | Slack |
+| Automated Response | iptables |
+| Model Development | Jupyter Notebook |
 
-High-class F1-score was used during model selection to balance the operational need to reduce unnecessary High-priority escalations while also avoiding missed important alerts.
+---
 
-The serialized deployment artifacts are available under:
+## Security Notes
 
-```text
-models/
-├── alert_priority_model_tuned.pkl
-├── feature_columns.pkl
-└── model_threshold.pkl
+This repository contains a sanitized portfolio version of the project.
+
+The following information is intentionally excluded:
+
+- API keys
+- Slack webhook credentials
+- passwords
+- private keys
+- protected infrastructure IP addresses
+- sensitive environment-specific configuration
+
+The original project dataset is also not publicly distributed. Dataset information is documented in the `dataset/` directory.
+
+---
+
+## Limitations
+
+- The system was developed and tested within a controlled virtual lab environment.
+- The deployed Random Forest model is currently static and trained offline.
+- Dataset size and diversity are limited compared with a production SOC.
+- Automated response is intentionally restricted to selected attack scenarios.
+- Live alert prioritization is performed on individual alerts rather than full temporal attack sequences.
+
+---
+
+## Future Improvements
+
+- Scheduled or incremental model retraining
+- Analyst-feedback integration
+- Broader attack scenarios
+- Stronger automated-response approval and rollback controls
+- More advanced campaign investigation views
+- Improved long-term log and storage management
+- Additional operational datasets
